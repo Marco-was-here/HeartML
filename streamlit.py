@@ -3,21 +3,22 @@ import pandas as pd
 import joblib
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 
 # Load the trained model
 model = joblib.load('best_model.pkl')
 
 # Function to preprocess user inputs
 def preprocess_input(data):
-    # Define the preprocessor
+    # Define the numerical and categorical columns
+    numerical_cols = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak', 'ca']
+    categorical_cols = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'thal']
+    
     preprocessor = ColumnTransformer(
         transformers=[
             ('num', StandardScaler(), numerical_cols),
             ('cat', OneHotEncoder(), categorical_cols)
         ])
     
-    # Transform the input data
     processed_data = preprocessor.fit_transform(data)
     return processed_data
 
@@ -68,5 +69,4 @@ if st.button("Predict"):
     st.write(f"Prediction: {'Heart Disease' if prediction[0] else 'No Heart Disease'}")
     st.write(f"Probability of Heart Disease: {prediction_proba[0][1]:.2f}")
 
-# Deploy the app using the command
-# streamlit run app.py
+# Run the app locally with: streamlit run app.py
