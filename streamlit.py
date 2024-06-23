@@ -1,24 +1,29 @@
 import streamlit as st
 import pandas as pd
-import joblib
+import pickle
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 
-# Load the trained model
-model = joblib.load('best_model.pkl')
+# Load the trained model using pickle
+with open('final_model.pkl', 'rb') as file:
+    model = pickle.load(file)
+
+# Identify categorical and numerical columns for preprocessing
+categorical_cols = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'thal']
+numerical_cols = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak', 'ca']
 
 # Function to preprocess user inputs
 def preprocess_input(data):
-    # Define the numerical and categorical columns
-    numerical_cols = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak', 'ca']
-    categorical_cols = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'thal']
-    
+    # Define the preprocessor
     preprocessor = ColumnTransformer(
         transformers=[
             ('num', StandardScaler(), numerical_cols),
-            ('cat', OneHotEncoder(), categorical_cols)
-        ])
+            ('cat', OneHotEncoder(drop='first'), categorical_cols)
+        ],
+        remainder='passthrough'  # Handle columns not specified
+    )
     
+    # Transform the input data
     processed_data = preprocessor.fit_transform(data)
     return processed_data
 
@@ -65,8 +70,6 @@ processed_input = preprocess_input(input_data)
 if st.button("Predict"):
     prediction = model.predict(processed_input)
     prediction_proba = model.predict_proba(processed_input)
-    
     st.write(f"Prediction: {'Heart Disease' if prediction[0] else 'No Heart Disease'}")
     st.write(f"Probability of Heart Disease: {prediction_proba[0][1]:.2f}")
 
-# Run the app locally with: streamlit run app.py
