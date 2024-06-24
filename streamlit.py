@@ -1,50 +1,81 @@
 import streamlit as st
 import pandas as pd
-import pickle
-
-# Load the trained pipeline (model + preprocessor) using pickle
-with open('final_model.pkl', 'rb') as file:
-    pipeline = pickle.load(file)
-
-# User input
-st.title("Heart Disease Prediction")
-st.write("Please input the following details to predict the likelihood of heart disease:")
-
-# Define the input fields
-age = st.number_input("Age", min_value=1, max_value=120, value=30)
-sex = st.selectbox("Sex", ["Male", "Female"])
-cp = st.selectbox("Chest Pain Type", ["Type 1", "Type 2", "Type 3", "Type 4"])
-trestbps = st.number_input("Resting Blood Pressure", min_value=80, max_value=200, value=120)
-chol = st.number_input("Serum Cholesterol", min_value=100, max_value=600, value=200)
-fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", ["True", "False"])
-restecg = st.selectbox("Resting Electrocardiographic Results", ["Normal", "Having ST-T wave abnormality", "Showing probable or definite left ventricular hypertrophy"])
-thalach = st.number_input("Maximum Heart Rate Achieved", min_value=60, max_value=220, value=150)
-exang = st.selectbox("Exercise Induced Angina", ["Yes", "No"])
-oldpeak = st.number_input("ST Depression Induced by Exercise", min_value=0.0, max_value=10.0, value=1.0)
-slope = st.selectbox("Slope of the Peak Exercise ST Segment", ["Upsloping", "Flat", "Downsloping"])
-ca = st.number_input("Number of Major Vessels Colored by Fluoroscopy", min_value=0, max_value=3, value=0)
-thal = st.selectbox("Thalassemia", ["Normal", "Fixed Defect", "Reversible Defect"])
-
-# Create a DataFrame from user input
-input_data = pd.DataFrame({
-    'age': [age],
-    'sex': [sex],
-    'cp': [cp],
-    'trestbps': [trestbps],
-    'chol': [chol],
-    'fbs': [fbs],
-    'restecg': [restecg],
-    'thalach': [thalach],
-    'exang': [exang],
-    'oldpeak': [oldpeak],
-    'slope': [slope],
-    'ca': [ca],
-    'thal': [thal]
-})
-
-# Make prediction
-if st.button("Predict"):
-    prediction = pipeline.predict(input_data)
-    prediction_proba = pipeline.predict_proba(input_data)
-    st.write(f"Prediction: {'Heart Disease' if prediction[0] else 'No Heart Disease'}")
-    st.write(f"Probability of Heart Disease: {prediction_proba[0][1]:.2f}")
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+ 
+ 
+@st.cache
+def load_data():
+    data = pd.read_csv('heart.csv',header=0, sep=";")
+    return data
+ 
+ 
+def preprocess_input(age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal):
+    sex = 0 if sex == 'female' else 1
+    fbs = 1 if fbs == 'yes' else 0
+    exang = 1 if exang == 'yes' else 0
+    return {
+        'age': age,
+        'sex': sex,
+        'cp': cp,
+        'trestbps': trestbps,
+        'chol': chol,
+        'fbs': fbs,
+        'restecg': restecg,
+        'thalach': thalach,
+        'exang': exang,
+        'oldpeak': oldpeak,
+        'slope': slope,
+        'ca': ca,
+        'thal': thal,
+      }
+ 
+ 
+data = load_data()
+if 'target' not in data.columns:
+    raise ValueError("The 'target' column is missing from the dataset.")
+ 
+X = data.drop(columns=['target'])  # Drop 'target' column from features
+y = data['target']  # Assign 'target' column to y
+ 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+model = LogisticRegression()
+model.fit(X_train, y_train)
+ 
+ 
+st.title('Heart Disease Prediction')
+ 
+ 
+st.header('Enter Patient Details')
+age = st.number_input('Age', 20, 100, 50)
+sex = st.selectbox('Sex', ['male', 'female'])
+cp = st.number_input('Chest Pain Type (cp)', 0, 3, 1)
+trestbps = st.number_input('Resting Blood Pressure (mm Hg)', 90, 200, 120)
+chol = st.number_input('Serum Cholesterol (mg/dl)', 100, 600, 200)
+fbs = st.selectbox('Fasting Blood Sugar > 120 mg/dl', ['true', 'false'])
+restecg = st.number_input('Resting Electrocardiographic Results (restecg)', 0, 2, 1)
+thalach = st.number_input('Maximum Heart Rate Achieved (thalach)', 70, 220, 150)
+exang = st.selectbox('Exercise Induced Angina (exang)', ['yes', 'no'])
+oldpeak = st.number_input('ST Depression Induced by Exercise (oldpeak)', 0.0, 6.2, 1.0)
+slope = st.number_input('Slope of the Peak Exercise ST Segment (slope)', 0, 2, 1)
+ca = st.number_input('Number of Major Vessels Colored by Flourosopy (ca)', 0, 4, 1)
+thal = st.number_input('Thalassemia (thal)', 0, 3, 1)
+ 
+ 
+def predict(model, input_data):
+    input_df = pd.DataFrame([input_data])
+    prediction = model.predict(input_df)
+    prediction_proba = model.predict_proba(input_df)
+    return prediction, prediction_proba
+ 
+ 
+if st.button('Predict'):
+    input_data = preprocess_input(age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal)
+    prediction, prediction_proba = predict(model, input_data)
+    # Display prediction
+    if prediction[0] == 0:
+        st.error('The patient is likely to **not** have heart disease.')
+    else:
+        st.success('The patient is likely to have **heart disease**.')
+ 
+    st.write(f'Prediction Probability: {prediction_proba[0][1]:.2f}')
