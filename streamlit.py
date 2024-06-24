@@ -46,7 +46,7 @@ slope = st.selectbox("Slope of the Peak Exercise ST Segment", ["Upsloping", "Fla
 ca = st.number_input("Number of Major Vessels Colored by Fluoroscopy", min_value=0, max_value=3, value=0)
 thal = st.selectbox("Thalassemia", ["Normal", "Fixed Defect", "Reversible Defect"])
 
-
+'''
 # Create a DataFrame from user input
 input_data = pd.DataFrame({
     'age': [age],
@@ -63,7 +63,7 @@ input_data = pd.DataFrame({
     'ca': [ca],
     'thal': [thal]
 })
-
+'''
 def predict(model, input_data):
     input_df = pd.DataFrame([input_data])
     prediction = model.predict(input_df)
