@@ -12,20 +12,13 @@ with open('final_model.pkl', 'rb') as file:
 categorical_cols = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'thal']
 numerical_cols = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak', 'ca']
 
-# Function to preprocess user inputs
-def preprocess_input(data):
-    # Define the preprocessor
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', StandardScaler(), numerical_cols),
-            ('cat', OneHotEncoder(drop='first'), categorical_cols)
-        ],
-        remainder='passthrough'  # Handle columns not specified
-    )
-    
-    # Transform the input data
-    processed_data = preprocessor.fit_transform(data)
-    return processed_data
+# Define the preprocessor
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_cols),
+        ('cat', OneHotEncoder(drop='first'), categorical_cols)
+    ]
+)
 
 # User input
 st.title("Heart Disease Prediction")
@@ -64,7 +57,7 @@ input_data = pd.DataFrame({
 })
 
 # Preprocess the input data
-processed_input = preprocess_input(input_data)
+processed_input = preprocessor.fit_transform(input_data)
 
 # Make prediction
 if st.button("Predict"):
@@ -72,4 +65,3 @@ if st.button("Predict"):
     prediction_proba = model.predict_proba(processed_input)
     st.write(f"Prediction: {'Heart Disease' if prediction[0] else 'No Heart Disease'}")
     st.write(f"Probability of Heart Disease: {prediction_proba[0][1]:.2f}")
-
