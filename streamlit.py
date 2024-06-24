@@ -1,24 +1,10 @@
 import streamlit as st
 import pandas as pd
 import pickle
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
 
-# Load the trained model using pickle
+# Load the trained pipeline (model + preprocessor) using pickle
 with open('final_model.pkl', 'rb') as file:
-    model = pickle.load(file)
-
-# Identify categorical and numerical columns for preprocessing
-categorical_cols = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'thal']
-numerical_cols = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak', 'ca']
-
-# Define the preprocessor
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', StandardScaler(), numerical_cols),
-        ('cat', OneHotEncoder(drop='first'), categorical_cols)
-    ]
-)
+    pipeline = pickle.load(file)
 
 # User input
 st.title("Heart Disease Prediction")
@@ -56,12 +42,9 @@ input_data = pd.DataFrame({
     'thal': [thal]
 })
 
-# Preprocess the input data
-processed_input = preprocessor.fit_transform(input_data)
-
 # Make prediction
 if st.button("Predict"):
-    prediction = model.predict(processed_input)
-    prediction_proba = model.predict_proba(processed_input)
+    prediction = pipeline.predict(input_data)
+    prediction_proba = pipeline.predict_proba(input_data)
     st.write(f"Prediction: {'Heart Disease' if prediction[0] else 'No Heart Disease'}")
     st.write(f"Probability of Heart Disease: {prediction_proba[0][1]:.2f}")
